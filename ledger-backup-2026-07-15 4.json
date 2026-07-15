@@ -1,0 +1,213 @@
+{
+  "__ledgerBackup": true,
+  "version": 1,
+  "exportedAt": "2026-07-15T16:39:00.982Z",
+  "finance": {
+    "accounts": [
+      {
+        "id": "2mfaz0db",
+        "name": "Personal Account",
+        "type": "Prepaid Card",
+        "currency": "EGP",
+        "initial": 870.31
+      },
+      {
+        "id": "smdw2c5f",
+        "name": "Wallet",
+        "type": "Cash",
+        "currency": "EGP",
+        "initial": 380
+      },
+      {
+        "id": "pkkongp2",
+        "name": "Savings",
+        "type": "Savings",
+        "currency": "EGP",
+        "initial": 10000.4
+      },
+      {
+        "id": "fz5mxzia",
+        "name": "Investments",
+        "type": "Investment",
+        "currency": "EGP",
+        "initial": 0
+      }
+    ],
+    "transactions": [],
+    "budgets": {
+      "Food & Groceries": 500,
+      "Housing Expense": 500,
+      "Shopping": 200,
+      "Transportation": 100,
+      "Healthcare": 200,
+      "Entertainments": 100,
+      "Work & Learning": 100,
+      "Travel": 200,
+      "Subscription": 100,
+      "Other": 100
+    },
+    "goal": {
+      "name": "",
+      "target": 0,
+      "saved": 0,
+      "currency": "EGP"
+    }
+  },
+  "university": {
+    "years": [
+      {
+        "id": "n1l5j7ex",
+        "name": "Year 1",
+        "semesters": [
+          {
+            "id": "todvqrt6",
+            "name": "Semester 1",
+            "modules": [
+              {
+                "id": "fqdokn8f",
+                "code": "ANA1102",
+                "name": "Anatomy",
+                "lecturer": "",
+                "assistant": "",
+                "lectures": [
+                  {
+                    "id": "rglf46un",
+                    "title": "Lecture 1 — Terminology (terms & planes)",
+                    "date": "2025-06-23",
+                    "attended": true,
+                    "quiz": {
+                      "assigned": false,
+                      "score": 0,
+                      "max": 0
+                    },
+                    "formative": {
+                      "assigned": false,
+                      "score": 0,
+                      "max": 0
+                    },
+                    "reflection": "Anatomy intro"
+                  },
+                  {
+                    "id": "cs2yo663",
+                    "title": "Lecture 2 — Skin & Fascia",
+                    "date": "",
+                    "attended": true,
+                    "quiz": {
+                      "assigned": false,
+                      "score": 0,
+                      "max": 0
+                    },
+                    "formative": {
+                      "assigned": false,
+                      "score": 0,
+                      "max": 0
+                    },
+                    "reflection": ""
+                  }
+                ],
+                "deadlines": [],
+                "grades": [],
+                "resources": [
+                  {
+                    "id": "9pvu6udb",
+                    "title": "Lecture 1 materials (OneDrive)",
+                    "url": "https://buc1-my.sharepoint.com/personal/marwan_20197821_buc_edu_eg/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fmarwan%5F20197821%5Fbuc%5Fedu%5Feg%2FDocuments%2FSemester%201%2FANA1102%2Flectures%2FLEC01&ga=1"
+                  },
+                  {
+                    "id": "6ocizu62",
+                    "title": "Lecture 2 video — Skin & Fascia (Stream)",
+                    "url": "https://buc1-my.sharepoint.com/personal/marwan_20197821_buc_edu_eg/_layouts/15/stream.aspx?id=%2Fpersonal%2Fmarwan%5F20197821%5Fbuc%5Fedu%5Feg%2FDocuments%2FSemester%201%2FANA1102%2Flectures%2FLEC02%2FVideo%2FLecture%202%20%20Skin%20and%20Fascia.mp4"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ooxeshwr",
+            "name": "Semester 2",
+            "modules": []
+          }
+        ]
+      },
+      {
+        "id": "4ijlos5x",
+        "name": "Year 2",
+        "semesters": [
+          {
+            "id": "lurbqst8",
+            "name": "Semester 1",
+            "modules": []
+          },
+          {
+            "id": "xvs02huq",
+            "name": "Semester 2",
+            "modules": []
+          }
+        ]
+      }
+    ]
+  },
+  "para": {
+    "areas": [
+      {
+        "id": "vsgqsk4f",
+        "name": "BUC University",
+        "type": "University",
+        "archived": false
+      },
+      {
+        "id": "qty86jlq",
+        "name": "Personal",
+        "type": "Personal",
+        "archived": false
+      },
+      {
+        "id": "958ogpoi",
+        "name": "Gym",
+        "type": "Health",
+        "archived": false
+      },
+      {
+        "id": "wbgp43x5",
+        "name": "Language Learning",
+        "type": "Personal",
+        "archived": false
+      }
+    ],
+    "projects": [
+      {
+        "id": "nwevt1pa",
+        "name": "IPP",
+        "areaId": "vsgqsk4f",
+        "status": "In progress",
+        "startDate": "2026-02-07",
+        "endDate": "",
+        "notes": "",
+        "archived": false
+      },
+      {
+        "id": "letac6te",
+        "name": "Self Hygiene",
+        "areaId": "qty86jlq",
+        "status": "Inbox",
+        "startDate": "",
+        "endDate": "",
+        "notes": "",
+        "archived": false
+      },
+      {
+        "id": "89yl8mi7",
+        "name": "Face Care Routine",
+        "areaId": "qty86jlq",
+        "status": "Inbox",
+        "startDate": "",
+        "endDate": "",
+        "notes": "",
+        "archived": false
+      }
+    ],
+    "resources": [],
+    "tasks": [],
+    "notes": []
+  }
+}
