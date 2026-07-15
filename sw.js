@@ -1,59 +1,81 @@
-const CACHE_NAME = "ledger-cache-v2";
-const CORE_ASSETS = [
+const CACHE_NAME = "ledger-cache-v3";
+
+const ASSETS = [
   "./",
   "./index.html",
   "./app.js",
-  "./storage-shim.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
   "./icon-maskable-512.png",
+  "./storage-shim.js"
 ];
 
+// Install
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
+
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
+// Activate
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    ).then(() => self.clients.claim())
+    Promise.all([
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys.map((key) => {
+            if (key !== CACHE_NAME) {
+              return caches.delete(key);
+            }
+          })
+        )
+      ),
+      self.clients.claim()
+    ])
   );
 });
 
-// Cache-first for same-origin app files; network-first (with cache fallback)
-// for everything else (fonts, CDN scripts) so updates land when online but
-// the app still works offline once those have been fetched once.
+// Fetch
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
+  if (event.request.method !== "GET") return;
 
-  const url = new URL(req.url);
-  const isSameOrigin = url.origin === self.location.origin;
-
-  if (isSameOrigin) {
+  // Always try network first for page navigation
+  if (event.request.mode === "navigate") {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-          return res;
-        }).catch(() => cached);
-      })
-    );
-  } else {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-          return res;
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put("./index.html", copy);
+          });
+          return response;
         })
-        .catch(() => caches.match(req))
+        .catch(() => caches.match("./index.html"))
     );
+    return;
   }
+
+  // Cache-first for other assets
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(event.request).then((response) => {
+        if (!response || response.status !== 200) {
+          return response;
+        }
+
+        const copy = response.clone();
+
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, copy);
+        });
+
+        return response;
+      });
+    })
+  );
 });
