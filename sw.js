@@ -1,12 +1,9 @@
-const CACHE_NAME = "ledger-cache-b6";
+const CACHE_NAME = "ledger-cache-v1";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./app.js",
   "./storage-shim.js",
-  "./react-shim.js",
-  "./react-dom-client-shim.js",
-  "./lucide-shim.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
