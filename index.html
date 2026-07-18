@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Personal Ledger (b7)</title>
+<title>Personal Ledger (b6)</title>
 <meta name="description" content="Finance, university, and PARA — one offline binder." />
 
 <!-- PWA -->
@@ -48,7 +48,7 @@
 </style>
 </head>
 <body>
-<div id="root"><div id="boot-fallback">Loading your ledger… (build b7)</div></div>
+<div id="root"><div id="boot-fallback">Loading your ledger… (build b6)</div></div>
 <div id="boot-error"></div>
 
 <script>
@@ -59,7 +59,7 @@
     if (root) root.style.display = "none";
     if (el) {
       el.style.display = "block";
-      el.textContent = "Something went wrong loading the app (build b7):\n\n" + message +
+      el.textContent = "Something went wrong loading the app (build b6):\n\n" + message +
         "\n\nTry: reload the page, or open it in a private/incognito window. " +
         "If it keeps happening, screenshot this whole box (the build number " +
         "at the top matters) and send it back.";
@@ -91,7 +91,7 @@
 
 <script type="module">
 (async () => {
-  const CURRENT_BUILD = "b7";
+  const CURRENT_BUILD = "b6";
   try {
     // Self-heal ONLY when this build is new to this device — clearing on
     // every load would break normal offline use. This is what fixes
