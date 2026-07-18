@@ -1,0 +1,139 @@
+{
+  "__ledgerBackup": true,
+  "version": 1,
+  "exportedAt": "2026-07-18T20:06:52.982Z",
+  "finance": {
+    "accounts": [
+      {
+        "id": "77hfuget",
+        "name": "Personal Account",
+        "type": "Prepaid Card",
+        "currency": "EGP",
+        "initial": 870.31
+      },
+      {
+        "id": "xgc63s8l",
+        "name": "Wallet",
+        "type": "Cash",
+        "currency": "EGP",
+        "initial": 380
+      },
+      {
+        "id": "z7bsqafp",
+        "name": "Savings",
+        "type": "Savings",
+        "currency": "EGP",
+        "initial": 10000.4
+      },
+      {
+        "id": "m56qp3sg",
+        "name": "Investments",
+        "type": "Investment",
+        "currency": "EGP",
+        "initial": 0
+      }
+    ],
+    "transactions": [],
+    "budgets": {
+      "Food & Groceries": 500,
+      "Housing Expense": 500,
+      "Shopping": 200,
+      "Transportation": 100,
+      "Healthcare": 200,
+      "Entertainments": 100,
+      "Work & Learning": 100,
+      "Travel": 200,
+      "Subscription": 100,
+      "Other": 100
+    },
+    "goal": {
+      "name": "",
+      "target": 0,
+      "saved": 0,
+      "currency": "EGP"
+    }
+  },
+  "university": {
+    "years": [
+      {
+        "id": "coe4kh08",
+        "name": "Year 1 ( 2025 - 2026 )",
+        "semesters": [
+          {
+            "id": "4sdhov7l",
+            "name": "Semester 1",
+            "modules": []
+          },
+          {
+            "id": "2pw9k9g9",
+            "name": "Semester 2",
+            "modules": []
+          }
+        ]
+      }
+    ]
+  },
+  "para": {
+    "areas": [
+      {
+        "id": "v4uyg8qg",
+        "name": "BUC University",
+        "type": "University",
+        "archived": false
+      },
+      {
+        "id": "oi7bz3x6",
+        "name": "Personal",
+        "type": "Personal",
+        "archived": false
+      },
+      {
+        "id": "czcykzxh",
+        "name": "Gym",
+        "type": "Health",
+        "archived": false
+      },
+      {
+        "id": "skag3mak",
+        "name": "Language Learning",
+        "type": "Personal",
+        "archived": false
+      }
+    ],
+    "projects": [
+      {
+        "id": "uf64w3ip",
+        "name": "IPP",
+        "areaId": "v4uyg8qg",
+        "status": "In progress",
+        "startDate": "2026-02-07",
+        "endDate": "",
+        "notes": "",
+        "archived": false
+      },
+      {
+        "id": "eik8q5yu",
+        "name": "Self Hygiene",
+        "areaId": "oi7bz3x6",
+        "status": "Inbox",
+        "startDate": "",
+        "endDate": "",
+        "notes": "",
+        "archived": false
+      },
+      {
+        "id": "t5ostu1s",
+        "name": "Face Care Routine",
+        "areaId": "oi7bz3x6",
+        "status": "Inbox",
+        "startDate": "",
+        "endDate": "",
+        "notes": "",
+        "archived": false
+      }
+    ],
+    "resources": [],
+    "tasks": [],
+    "notes": []
+  }
+}
