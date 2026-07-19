@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Wallet, PiggyBank, GraduationCap, Plus, X, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Check, ChevronRight, ChevronLeft, Pencil, Trash2, BookOpen, CalendarClock, ClipboardList, Percent, Compass, FolderKanban, Link2, CheckSquare, StickyNote, ExternalLink, Archive as ArchiveIcon, Download, Upload, Settings, Star, Flag, Palette } from "lucide-react";
+import { Wallet, PiggyBank, GraduationCap, Plus, X, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Check, ChevronRight, ChevronLeft, Pencil, Trash2, BookOpen, CalendarClock, ClipboardList, Percent, Compass, FolderKanban, Link2, CheckSquare, StickyNote, ExternalLink, Archive as ArchiveIcon, Download, Upload, Settings, Star, Flag, Palette, RefreshCw } from "lucide-react";
 /* ---------------------------------------------------------------
    Tokens
    paper #EFEBE1  ink #232620  line #D9D2BE
@@ -1256,6 +1256,111 @@ function SettingsSheet({ onClose, tabs, tabColors, setTabColors, customTabs, set
             " Create section")));
 }
 /* =================================================================
+   SYNC — passcode-gated automatic backup/restore via the Worker API
+================================================================= */
+const SYNC_PASSCODE_KEY = "ledger-sync-passcode";
+const SYNC_LAST_SYNCED_KEY = "ledger-sync-last-synced-at";
+
+async function apiSave(passcode, payload, updatedAt) {
+  const res = await fetch("/api/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ passcode, payload, updatedAt }),
+  });
+  if (!res.ok) throw new Error("Save failed (" + res.status + ")");
+  return res.json();
+}
+
+async function apiLoad(passcode) {
+  const res = await fetch("/api/load?passcode=" + encodeURIComponent(passcode));
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Load failed (" + res.status + ")");
+  return res.json();
+}
+
+function SyncSheet({ onClose, currentPasscode, onAdopt }) {
+  const [mode, setMode] = useState(currentPasscode ? "manage" : "create");
+  const [input, setInput] = useState("");
+  const [confirmInput, setConfirmInput] = useState("");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function createNew() {
+    if (input.length < 4) { setStatus("Passcode needs to be at least 4 characters."); return; }
+    if (input !== confirmInput) { setStatus("Passcodes don't match."); return; }
+    setBusy(true);
+    try {
+      await onAdopt(input, "create");
+      onClose();
+    } catch (e) {
+      setStatus("Couldn't reach the sync server. Check your connection and try again.");
+    }
+    setBusy(false);
+  }
+
+  async function useExisting() {
+    if (input.length < 4) { setStatus("Enter the passcode you set up on your other device."); return; }
+    setBusy(true);
+    try {
+      await onAdopt(input, "restore");
+      onClose();
+    } catch (e) {
+      setStatus("Couldn't find or reach data for that passcode. Check it and your connection.");
+    }
+    setBusy(false);
+  }
+
+  function forget() {
+    const ok = window.confirm("This stops syncing on this device only. Your data stays exactly as-is here and on the server. Continue?");
+    if (!ok) return;
+    try { localStorage.removeItem(SYNC_PASSCODE_KEY); localStorage.removeItem(SYNC_LAST_SYNCED_KEY); } catch (e) {}
+    window.location.reload();
+  }
+
+  return (
+    React.createElement(Sheet, { title: "Sync across devices", onClose: onClose, accent: "#2E4374" },
+      currentPasscode ? (
+        React.createElement("div", null,
+          React.createElement("div", { className: "text-sm mb-4", style: { fontFamily: FONT_BODY, color: "#5C5847" } },
+            "This device syncs automatically whenever you're online. Enter this same passcode on any other device to keep them in sync."),
+          React.createElement("div", { className: "text-xs uppercase tracking-[0.15em] mb-1.5", style: { fontFamily: FONT_BODY, color: "#8A8672" } }, "Your passcode"),
+          React.createElement("div", { className: "text-lg font-mono mb-6 px-3 py-2 rounded-lg", style: { background: "#EFEBE1", color: "#232620" } }, currentPasscode),
+          React.createElement(Btn, { accent: "#9C4A32", full: true, onClick: forget }, "Stop syncing this device")
+        )
+      ) : (
+        React.createElement("div", null,
+          React.createElement("div", { className: "flex gap-2 mb-4" },
+            React.createElement("button", { onClick: () => { setMode("create"); setStatus(""); }, className: "flex-1 py-2 rounded-lg text-sm font-medium", style: { fontFamily: FONT_BODY, background: mode === "create" ? "#2E4374" : "#EFEBE1", color: mode === "create" ? "#FBFAF6" : "#5C5847" } }, "New passcode"),
+            React.createElement("button", { onClick: () => { setMode("restore"); setStatus(""); }, className: "flex-1 py-2 rounded-lg text-sm font-medium", style: { fontFamily: FONT_BODY, background: mode === "restore" ? "#2E4374" : "#EFEBE1", color: mode === "restore" ? "#FBFAF6" : "#5C5847" } }, "I have one already")
+          ),
+          mode === "create" ? (
+            React.createElement("div", null,
+              React.createElement("div", { className: "text-sm mb-4", style: { fontFamily: FONT_BODY, color: "#5C5847" } },
+                "Pick a passcode. You'll enter this same one on your other devices to keep them synced — write it down somewhere, it can't be recovered if you forget it."),
+              React.createElement(Field, { label: "New passcode" },
+                React.createElement("input", { type: "text", value: input, onChange: (e) => setInput(e.target.value), className: inputCls, style: inputStyle })),
+              React.createElement(Field, { label: "Confirm passcode" },
+                React.createElement("input", { type: "text", value: confirmInput, onChange: (e) => setConfirmInput(e.target.value), className: inputCls, style: inputStyle })),
+              status && React.createElement("div", { className: "text-xs mb-3", style: { fontFamily: FONT_BODY, color: "#9C4A32" } }, status),
+              React.createElement(Btn, { accent: "#2E4374", full: true, disabled: busy, onClick: createNew }, busy ? "Setting up…" : "Start syncing")
+            )
+          ) : (
+            React.createElement("div", null,
+              React.createElement("div", { className: "text-sm mb-4", style: { fontFamily: FONT_BODY, color: "#5C5847" } },
+                "Enter the passcode you set up on your other device. This will replace what's on this device with your synced data."),
+              React.createElement(Field, { label: "Passcode" },
+                React.createElement("input", { type: "text", value: input, onChange: (e) => setInput(e.target.value), className: inputCls, style: inputStyle })),
+              status && React.createElement("div", { className: "text-xs mb-3", style: { fontFamily: FONT_BODY, color: "#9C4A32" } }, status),
+              React.createElement(Btn, { accent: "#2E4374", full: true, disabled: busy, onClick: useExisting }, busy ? "Connecting…" : "Connect this device")
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+/* =================================================================
    ROOT APP — the "binder"
 ================================================================= */
 const TABS = [
@@ -1267,7 +1372,7 @@ const TABS = [
     { id: "tasks", label: "Tasks", icon: CheckSquare, color: PARA_COLOR, light: PARA_LIGHT },
     { id: "notes", label: "Notes", icon: StickyNote, color: PARA_COLOR, light: PARA_LIGHT },
 ];
-const BUILD_TAG = "b6";
+const BUILD_TAG = "b10-sync";
 export default function Binder() {
     const [tab, setTab] = useState("finance");
     const [financeData, setFinanceData, financeLoaded] = useStore("finance-data", emptyFinance);
@@ -1306,6 +1411,88 @@ export default function Binder() {
     const fileInputRef = useRef(null);
     const [importMsg, setImportMsg] = useState("");
     const [showSettings, setShowSettings] = useState(false);
+    const [showSync, setShowSync] = useState(false);
+    const [passcode, setPasscode] = useState(() => { try { return localStorage.getItem(SYNC_PASSCODE_KEY) || ""; } catch (e) { return ""; } });
+    const [syncStatus, setSyncStatus] = useState("");
+    const pushTimer = useRef(null);
+    const didInitialPull = useRef(false);
+
+    function currentSnapshot() {
+        return { finance: financeData, university: uniData, para: paraData, tabColors, customTabs };
+    }
+    function applySnapshot(snap) {
+        if (snap.finance) setFinanceData(snap.finance);
+        if (snap.university) setUniData(snap.university);
+        if (snap.para) setParaData(snap.para);
+        if (snap.tabColors) setTabColors(snap.tabColors);
+        if (snap.customTabs) setCustomTabs(snap.customTabs);
+    }
+
+    async function adoptPasscode(code, mode) {
+        if (mode === "restore") {
+            const remote = await apiLoad(code);
+            if (!remote) throw new Error("No data found for that passcode");
+            applySnapshot(remote.payload);
+            try { localStorage.setItem(SYNC_LAST_SYNCED_KEY, remote.updatedAt); } catch (e) {}
+        } else {
+            const now = new Date().toISOString();
+            await apiSave(code, currentSnapshot(), now);
+            try { localStorage.setItem(SYNC_LAST_SYNCED_KEY, now); } catch (e) {}
+        }
+        try { localStorage.setItem(SYNC_PASSCODE_KEY, code); } catch (e) {}
+        setPasscode(code);
+        didInitialPull.current = true; // no need to re-pull right after adopting
+    }
+
+    async function syncNow(showFeedback) {
+        if (!passcode) return;
+        if (!navigator.onLine) { if (showFeedback) { setSyncStatus("Offline — will sync when you're back online."); setTimeout(() => setSyncStatus(""), 3000); } return; }
+        setSyncStatus("Syncing…");
+        try {
+            const now = new Date().toISOString();
+            await apiSave(passcode, currentSnapshot(), now);
+            try { localStorage.setItem(SYNC_LAST_SYNCED_KEY, now); } catch (e) {}
+            setSyncStatus("Synced");
+            setTimeout(() => setSyncStatus(""), 2000);
+        } catch (e) {
+            setSyncStatus("Sync failed — will retry");
+            setTimeout(() => setSyncStatus(""), 3000);
+        }
+    }
+
+    // On boot (once loaded, once per session): if a passcode is set, pull the
+    // server's copy if it's newer than what this device last synced —
+    // otherwise push this device's copy up. Simple last-write-wins by clock,
+    // not true multi-device conflict resolution.
+    useEffect(() => {
+        if (!loaded || !passcode || didInitialPull.current) return;
+        didInitialPull.current = true;
+        (async () => {
+            if (!navigator.onLine) return;
+            try {
+                const remote = await apiLoad(passcode);
+                let lastSynced = null;
+                try { lastSynced = localStorage.getItem(SYNC_LAST_SYNCED_KEY); } catch (e) {}
+                if (remote && (!lastSynced || new Date(remote.updatedAt) > new Date(lastSynced))) {
+                    applySnapshot(remote.payload);
+                    try { localStorage.setItem(SYNC_LAST_SYNCED_KEY, remote.updatedAt); } catch (e) {}
+                } else {
+                    await syncNow(false);
+                }
+            } catch (e) { /* silent on boot — manual sync button can retry */ }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loaded, passcode]);
+
+    // Debounced auto-push whenever data changes, once a passcode is set.
+    useEffect(() => {
+        if (!loaded || !passcode || !didInitialPull.current) return;
+        if (pushTimer.current) clearTimeout(pushTimer.current);
+        pushTimer.current = setTimeout(() => { syncNow(false); }, 2000);
+        return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [financeData, uniData, paraData, tabColors, customTabs]);
+
     function exportBackup() {
         const payload = {
             __ledgerBackup: true,
@@ -1378,6 +1565,8 @@ export default function Binder() {
                     React.createElement("div", { className: "text-xs uppercase tracking-[0.2em]", style: { fontFamily: FONT_BODY, color: "#8A8672" } }, "Personal ledger"),
                     React.createElement("h1", { className: "text-2xl font-semibold", style: { fontFamily: FONT_HEAD, color: "#232620" } }, activeTab.label)),
                 React.createElement("div", { className: "flex items-center gap-1.5 flex-shrink-0 pt-1" },
+                    React.createElement("button", { onClick: () => setShowSync(true), title: "Sync across devices", className: "p-2 rounded-full relative", style: { background: passcode ? "#E5E8F2" : "#E3DED0" } },
+                        React.createElement(RefreshCw, { size: 15, color: passcode ? "#2E4374" : "#5C5847" })),
                     React.createElement("button", { onClick: () => setShowSettings(true), title: "Customize", className: "p-2 rounded-full", style: { background: "#E3DED0" } },
                         React.createElement(Settings, { size: 15, color: "#5C5847" })),
                     React.createElement("button", { onClick: exportBackup, title: "Export backup", className: "p-2 rounded-full", style: { background: "#E3DED0" } },
@@ -1385,7 +1574,7 @@ export default function Binder() {
                     React.createElement("button", { onClick: triggerImport, title: "Import backup", className: "p-2 rounded-full", style: { background: "#E3DED0" } },
                         React.createElement(Upload, { size: 15, color: "#5C5847" })),
                     React.createElement("input", { ref: fileInputRef, type: "file", accept: "application/json", onChange: handleImportFile, className: "hidden" }))),
-            importMsg && (React.createElement("div", { className: "mx-5 mb-2 text-xs px-3 py-2 rounded-lg", style: { fontFamily: FONT_BODY, background: "#E5E8F2", color: "#2E4374" } }, importMsg)),
+            (importMsg || syncStatus) && (React.createElement("div", { className: "mx-5 mb-2 text-xs px-3 py-2 rounded-lg", style: { fontFamily: FONT_BODY, background: "#E5E8F2", color: "#2E4374" } }, importMsg || syncStatus)),
             React.createElement("div", { className: "flex px-5 gap-1.5 mb-4 overflow-x-auto no-scrollbar", style: { scrollbarWidth: "none" } }, allTabs.map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.id;
@@ -1398,5 +1587,6 @@ export default function Binder() {
             React.createElement("div", { className: "text-center text-[10px] pt-6 pb-2", style: { fontFamily: FONT_BODY, color: "#C7C1AC" } },
                 "Personal Ledger \u00B7 build ",
                 BUILD_TAG)),
-        showSettings && (React.createElement(SettingsSheet, { onClose: () => setShowSettings(false), tabs: allTabs, tabColors: tabColors, setTabColors: setTabColors, customTabs: customTabs, setCustomTabs: setCustomTabs }))));
+        showSettings && (React.createElement(SettingsSheet, { onClose: () => setShowSettings(false), tabs: allTabs, tabColors: tabColors, setTabColors: setTabColors, customTabs: customTabs, setCustomTabs: setCustomTabs })),
+        showSync && (React.createElement(SyncSheet, { onClose: () => setShowSync(false), currentPasscode: passcode, onAdopt: adoptPasscode }))));
 }

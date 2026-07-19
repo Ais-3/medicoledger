@@ -1,4 +1,4 @@
-const CACHE_NAME = "ledger-cache-b9";
+const CACHE_NAME = "ledger-cache-b10";
 
 // Same-origin files — required, install fails loudly if any of these are missing.
 const CORE_ASSETS = [

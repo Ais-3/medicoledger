@@ -18,7 +18,7 @@ const NAMES = [
   "Pencil", "Trash2", "BookOpen", "CalendarClock", "ClipboardList", "Percent",
   "Compass", "FolderKanban", "Link2", "CheckSquare", "StickyNote",
   "ExternalLink", "Archive", "Download", "Upload", "Settings", "Star", "Flag",
-  "Palette",
+  "Palette", "RefreshCw",
 ];
 
 let mod = null;
@@ -63,3 +63,4 @@ export const Settings = resolved.Settings;
 export const Star = resolved.Star;
 export const Flag = resolved.Flag;
 export const Palette = resolved.Palette;
+export const RefreshCw = resolved.RefreshCw;
