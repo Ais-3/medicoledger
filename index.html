@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Personal Ledger</title>
+<title>Personal Ledger (b8)</title>
 <meta name="description" content="Finance, university, and PARA — one offline binder." />
 
 <!-- PWA -->
@@ -14,53 +14,153 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Ledger" />
 
-<!-- Tailwind (utility classes used throughout the app) -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- Resolve bare imports in the app module to CDN builds, deduped on React -->
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.383.0?external=react"
-  }
-}
-</script>
-
 <style>
   html, body { background: #EFEBE1; margin: 0; }
   #boot-fallback {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
     font-family: ui-sans-serif, system-ui, sans-serif; color: #8A8672; font-size: 14px;
   }
+  #boot-error {
+    display: none; min-height: 100vh; padding: 24px; box-sizing: border-box;
+    font-family: ui-monospace, monospace; color: #9C4A32; background: #F4E3DC;
+    white-space: pre-wrap; font-size: 13px; line-height: 1.5;
+  }
 </style>
 </head>
 <body>
-<div id="root"><div id="boot-fallback">Loading your ledger…</div></div>
+<div id="root"><div id="boot-fallback">Loading your ledger… (build b8)</div></div>
+<div id="boot-error"></div>
+
+<script>
+  var __booted = false;
+  function showBootError(message) {
+    var el = document.getElementById("boot-error");
+    var root = document.getElementById("root");
+    if (root) root.style.display = "none";
+    if (el) {
+      el.style.display = "block";
+      el.textContent = "Something went wrong loading the app (build b8):\n\n" + message +
+        "\n\nTry: reload the page, or open it in a private/incognito window. " +
+        "If it keeps happening, screenshot this whole box (the build number " +
+        "at the top matters) and send it back.";
+    }
+  }
+  window.addEventListener("error", function (e) {
+    showBootError((e && e.message) || "Unknown script error (no further detail was provided by the browser).");
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e && e.reason;
+    showBootError((r && (r.stack || r.message)) || String(r));
+  });
+  // Watchdog: if nothing has rendered within 15s, something hung (not just
+  // failed) — a stalled request otherwise leaves a spinner forever with no
+  // signal at all, which looks identical to "still working."
+  setTimeout(function () {
+    if (!__booted) {
+      showBootError(
+        "The app is taking much longer than normal to load (over 15 seconds), " +
+        "which usually means a network request stalled without failing outright.\n\n" +
+        "This is most often internet connectivity, not the app itself."
+      );
+    }
+  }, 15000);
+
+  // Load a classic script and resolve/reject based on its OWN load/error
+  // events, rather than the generic window 'error' handler — this is what
+  // lets us report a specific, attributable message instead of a sanitized
+  // "Script error."
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.crossOrigin = "anonymous";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to fetch: " + src));
+      document.head.appendChild(s);
+    });
+  }
+</script>
 
 <!-- On-device storage shim, must load before the app module -->
 <script src="./storage-shim.js"></script>
 
-<!-- Babel: transpiles the app's JSX in-browser, no build step required -->
 <script type="module">
-import { createRoot } from "react-dom/client";
-import React from "react";
-import Binder from "./app.js";
+(async () => {
+  const CURRENT_BUILD = "b8";
+  try {
+    // Self-heal FIRST, before requesting anything else — including React
+    // itself. This must run before any CDN script tag is added to the page:
+    // if an old service worker from a previous visit is still active, it
+    // intercepts every fetch from the very first request onward (unlike a
+    // newly-installing worker, which only takes over after activation). An
+    // old worker holding a broken/incomplete cached response for React would
+    // otherwise hijack the very first load, before cleanup ever got a
+    // chance to run — which is exactly what a plain <script src="..."> tag
+    // sitting in <head> would have done.
+    let lastSeenBuild = null;
+    try { lastSeenBuild = localStorage.getItem("ledger-build-seen"); } catch (e) {}
 
-const root = createRoot(document.getElementById("root"));
-root.render(React.createElement(Binder));
+    if (lastSeenBuild !== CURRENT_BUILD) {
+      if ("serviceWorker" in navigator) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        } catch (e) { /* non-fatal */ }
+      }
+      if (window.caches && caches.keys) {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        } catch (e) { /* non-fatal */ }
+      }
+      try { localStorage.setItem("ledger-build-seen", CURRENT_BUILD); } catch (e) {}
+    }
+
+    // Load Tailwind (cosmetic, non-blocking) and React (required) only AFTER
+    // any stale worker/cache is guaranteed gone.
+    loadScript("https://cdn.tailwindcss.com").catch(() => {});
+    await loadScript("https://unpkg.com/react@18.3.1/umd/react.production.min.js");
+    await loadScript("https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js");
+
+    if (!window.React || !window.ReactDOM) {
+      throw new Error("React scripts loaded but window.React / window.ReactDOM are still missing — unexpected.");
+    }
+
+    // Import map is added dynamically too, so it's resolved only now — see
+    // the inline importmap below for what "react" etc. point to.
+    const [{ createRoot }, AppMod] = await Promise.all([
+      import("react-dom/client"),
+      import("./app.js"),
+    ]);
+    const Binder = AppMod.default;
+    const root = createRoot(document.getElementById("root"));
+    root.render(window.React.createElement(Binder));
+    __booted = true;
+
+    // Only cache a version of the app once it has actually rendered
+    // successfully — never let a broken build get cached for offline use.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch((e) => {
+        console.warn("Service worker registration failed (app still works, just won't cache for offline yet):", e);
+      });
+    }
+  } catch (err) {
+    showBootError((err && (err.stack || err.message)) || String(err));
+  }
+})();
 </script>
 
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch((e) => {
-        console.warn("Service worker registration failed:", e);
-      });
-    });
+<!-- Only lucide-react (icons — cosmetic, has a graceful fallback) resolves
+     via CDN ESM. React itself resolves to local shims over the globals
+     loaded dynamically above. -->
+<script type="importmap">
+{
+  "imports": {
+    "react": "./react-shim.js",
+    "react-dom/client": "./react-dom-client-shim.js",
+    "lucide-react": "./lucide-shim.js"
   }
+}
 </script>
 </body>
 </html>
