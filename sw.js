@@ -1,4 +1,4 @@
-const CACHE_NAME = "ledger-cache-b8";
+const CACHE_NAME = "ledger-cache-b9";
 
 // Same-origin files — required, install fails loudly if any of these are missing.
 const CORE_ASSETS = [
@@ -53,13 +53,29 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Stale-while-revalidate for everything: serve the cached copy immediately
-// (fast, works offline), but always kick off a background fetch to refresh
-// the cache for next time. This is the key fix for "stuck on an old
-// version forever" — pure cache-first (the previous strategy) never
-// re-checks the network once something is cached, so a page could serve a
-// stale build indefinitely with no way to self-correct short of a full
-// cache wipe. Stale-while-revalidate self-heals within one extra reload.
+// Stale-while-revalidate: serve the cached copy immediately (fast, works
+// offline), while quietly refreshing the cache in the background for next
+// time.
+//
+// IMPORTANT BUG FIX (this is what caused "Script error." specifically after
+// installing to the home screen): the previous version, when a cross-origin
+// request was neither cached NOR reachable over the network, returned a
+// synthetic plain-text Response ("Offline and this resource was never
+// cached.") as a stand-in. For a <script src="..."> request, the browser
+// doesn't care that the body isn't real JS — it tries to EXECUTE that text
+// as a script anyway. "Offline and this resource..." is not valid
+// JavaScript, so it throws a SyntaxError — and because that error is
+// attributed to a cross-origin script URL, the browser sanitizes it down to
+// the generic, undebuggable "Script error." with zero detail. That's
+// exactly the symptom reported. The fix: never synthesize a fake body for a
+// failed fetch — let the failure propagate as a real network error instead,
+// so the browser (and our own onerror handlers in index.html) can report it
+// properly.
+//
+// Also fixed: previously called fetch(req, { mode: "cors" }) — passing a
+// second options argument to override an existing Request's mode is
+// unreliable across browsers when the two disagree. Plain fetch(req) always
+// respects the request's own mode and is spec-safe everywhere.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -69,7 +85,7 @@ self.addEventListener("fetch", (event) => {
       const cache = await caches.open(CACHE_NAME);
       const cached = await cache.match(req);
 
-      const network = fetch(req, req.url.startsWith(self.location.origin) ? {} : { mode: "cors" })
+      const networkFetch = fetch(req)
         .then((res) => {
           if (res && (res.ok || res.type === "opaque")) cache.put(req, res.clone());
           return res;
@@ -78,15 +94,20 @@ self.addEventListener("fetch", (event) => {
 
       if (cached) {
         // Don't block the response on the network — update the cache quietly
-        // in the background for the next load.
-        network;
+        // for the next load. Swallow any rejection so it can't surface as an
+        // unhandled promise rejection.
+        networkFetch.catch(() => {});
         return cached;
       }
-      const fresh = await network;
+
+      const fresh = await networkFetch;
       if (fresh) return fresh;
-      // Nothing cached and network failed — only real recourse when totally offline
-      // on a never-before-seen resource.
-      return new Response("Offline and this resource was never cached.", { status: 503 });
+
+      // Nothing cached and the network failed — this is a genuine failure.
+      // Let it propagate as a real error rather than inventing a response
+      // body, so callers (script tags, fetch(), import()) see an honest
+      // network failure instead of malformed content.
+      throw new Error("Resource unavailable: not cached and network fetch failed for " + req.url);
     })()
   );
 });
